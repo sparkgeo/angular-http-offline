@@ -52,13 +52,12 @@
           if (!config.ignoreOfflineModule) {
             switch (rejection.status) {
               case -1:
-                deferred = $q.defer();
-                bufferLength = httpBuffer.append(config, deferred);
-                if (bufferLength > 0)
-                  console.log('Buffered request until back online', rejection);
+                var deferred = $q.defer();
+                var bufferLength = httpBuffer.append(config, deferred);
                 if (bufferLength === 1)
                   $rootScope.$broadcast('event:offline-connectionRequired', rejection);
-
+                if (bufferLength > 0)
+                  console.log('Buffered request until back online', rejection);
                 return deferred.promise;
             }
           }
