@@ -23,7 +23,7 @@
        */
       retryRequests: function(data, configUpdater) {
         var updater = configUpdater || function(config) {return config;};
-        $rootScope.$broadcast('event:http-retryRequests', data);
+        $rootScope.$broadcast('event:offline-retryRequests', data);
         httpBuffer.retryAll(updater);
       },
 
@@ -34,7 +34,7 @@
        */
       cancelRequests: function(data, reason) {
         httpBuffer.rejectAll(reason);
-        $rootScope.$broadcast('event:http-cancelRequests', data);
+        $rootScope.$broadcast('event:offline-cancelRequests', data);
       }
     };
   }])
@@ -42,7 +42,7 @@
   /**
    * $http interceptor.
    * On -1 response (without 'ignoreOfflineModule' option) stores the request
-   * and broadcasts 'event:http-connectionRequired'.
+   * and broadcasts 'event:offline-connectionRequired'.
    */
   .config(['$httpProvider', function($httpProvider) {
     $httpProvider.interceptors.push(['$rootScope', '$q', 'httpBuffer', function($rootScope, $q, httpBuffer) {
@@ -57,7 +57,7 @@
                 if (bufferLength > 0)
                   console.log('Buffered request until back online', rejection);
                 if (bufferLength === 1)
-                  $rootScope.$broadcast('event:http-connectionRequired', rejection);
+                  $rootScope.$broadcast('event:offline-connectionRequired', rejection);
 
                 return deferred.promise;
             }
