@@ -1,0 +1,17 @@
+{
+  "author": "Alain St Pierre",
+  "name": "angular-http-offline",
+  "homepage": "https://github.com/sparkgeo/angular-http-offline",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/sparkgeo/angular-http-offline.git"
+  },
+  "main": "./src/http-offline-interceptor.js",
+  "dependencies": {
+    "angular": "^1.2"
+  },
+  "ignore": [
+    "package.json"
+  ],
+  "license": "MIT"
+}

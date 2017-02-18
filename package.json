@@ -1,0 +1,34 @@
+{
+  "name": "angular-http-offline",
+  "version": "0.1.0",
+  "description": "HTTP Offline Interceptor Module for AngularJS.",
+  "main": "src/http-offline-interceptor.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sparkgeo/angular-http-offline.git"
+  },
+  "author": "Alain St Pierre",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sparkgeo/angular-http-offline/issues"
+  },
+  "keywords": [
+    "angular",
+    "offline"
+  ],
+  "homepage": "https://github.com/sparkgeo/angular-http-offline",
+  "devDependencies": {
+    "mkdirp": "^0.5.1",
+    "rimraf": "^2.5.4",
+    "uglifyjs": "^2.4.10"
+  },
+  "scripts": {
+    "clean": "rimraf dist/*",
+    "prebuild": "npm run clean -s && mkdirp dist",
+    "build": "npm run build:minify -s && npm run build:copy -s",
+    "build:minify": "uglifyjs src/http-offline-interceptor.js -o dist/http-offline-interceptor.min.js -c",
+    "build:copy": "cat src/http-offline-interceptor.js > dist/http-offline-interceptor.js",
+    "version": "npm run build && git add -A dist",
+    "postversion": "git push && git push --tags"
+  }
+}
