@@ -11,7 +11,7 @@
 
   angular.module('http-offline-interceptor', ['http-offline-interceptor-buffer'])
 
-  .factory('offlineService', ['$rootScope','httpBuffer', function($rootScope, httpBuffer) {
+  .factory('offlineService', ['$rootScope','httpOfflineBuffer', function($rootScope, httpOfflineBuffer) {
     return {
       /**
        * Call this function to indicate that a connection was established and trigger a
@@ -23,7 +23,7 @@
        */
       retryRequests: function() {
         $rootScope.$broadcast('event:offline-retryRequests');
-        httpBuffer.retryAll();
+        httpOfflineBuffer.retryAll();
       },
 
       /**
@@ -32,7 +32,7 @@
        * @param reason if provided, the requests are rejected; abandoned otherwise.
        */
       cancelRequests: function() {
-        httpBuffer.rejectAll();
+        httpOfflineBuffer.rejectAll();
         $rootScope.$broadcast('event:offline-cancelRequests');
       }
     };
@@ -44,7 +44,7 @@
    * and broadcasts 'event:offline-connectionRequired'.
    */
   .config(['$httpProvider', function($httpProvider) {
-    $httpProvider.interceptors.push(['$rootScope', '$q', 'httpBuffer', function($rootScope, $q, httpBuffer) {
+    $httpProvider.interceptors.push(['$rootScope', '$q', 'httpOfflineBuffer', function($rootScope, $q, httpOfflineBuffer) {
       return {
         responseError: function(rejection) {
           var config = rejection.config || {};
@@ -55,7 +55,7 @@
                 delete config.transformResponse;
                 delete config.transformRequest;
                 var deferred = $q.defer();
-                var bufferLength = httpBuffer.append(config);
+                var bufferLength = httpOfflineBuffer.append(config);
                 if (bufferLength === 1)
                   $rootScope.$broadcast('event:offline-connectionRequired', rejection);
                 // if (bufferLength > 0)
@@ -75,7 +75,7 @@
    */
   angular.module('http-offline-interceptor-buffer', ['ngStorage'])
 
-  .factory('httpBuffer', ['$injector', '$localStorage', function($injector, $localStorage) {
+  .factory('httpOfflineBuffer', ['$injector', '$localStorage', function($injector, $localStorage) {
     /** Holds all the requests, so they can be re-requested in future. */
 
     $localStorage.buffer = $localStorage.buffer || [];
