@@ -21,10 +21,9 @@
        * @param configUpdater an optional transformation function that can modify the
        * requests that are retried after having logged in. It must return the request.
        */
-      retryRequests: function(data, configUpdater) {
-        var updater = configUpdater || function(config) {return config;};
-        $rootScope.$broadcast('event:offline-retryRequests', data);
-        httpBuffer.retryAll(updater);
+      retryRequests: function() {
+        $rootScope.$broadcast('event:offline-retryRequests');
+        httpBuffer.retryAll();
       },
 
       /**
@@ -32,9 +31,9 @@
        * @param data an optional argument to pass on to $broadcast.
        * @param reason if provided, the requests are rejected; abandoned otherwise.
        */
-      cancelRequests: function(data, reason) {
-        httpBuffer.rejectAll(reason);
-        $rootScope.$broadcast('event:offline-cancelRequests', data);
+      cancelRequests: function() {
+        httpBuffer.rejectAll();
+        $rootScope.$broadcast('event:offline-cancelRequests');
       }
     };
   }])
@@ -52,12 +51,15 @@
           if (!config.ignoreOfflineModule) {
             switch (rejection.status) {
               case -1:
+                //remove these null transforms - they cause errors for offline
+                delete config.transformResponse;
+                delete config.transformRequest;
                 var deferred = $q.defer();
-                var bufferLength = httpBuffer.append(config, deferred);
+                var bufferLength = httpBuffer.append(config);
                 if (bufferLength === 1)
                   $rootScope.$broadcast('event:offline-connectionRequired', rejection);
-                if (bufferLength > 0)
-                  console.log('Buffered request until back online', rejection);
+                // if (bufferLength > 0)
+                //   console.log('Buffered request until back online', rejection);
                 return deferred.promise;
             }
           }
@@ -71,21 +73,24 @@
   /**
    * Private module, a utility, required internally by 'http-offline-interceptor'.
    */
-  angular.module('http-offline-interceptor-buffer', [])
+  angular.module('http-offline-interceptor-buffer', ['ngStorage'])
 
-  .factory('httpBuffer', ['$injector', function($injector) {
+  .factory('httpBuffer', ['$injector', '$localStorage', function($injector, $localStorage) {
     /** Holds all the requests, so they can be re-requested in future. */
-    var buffer = [];
+
+    $localStorage.buffer = $localStorage.buffer || [];
 
     /** Service initialized later because of circular dependency problem. */
     var $http;
+    var $q;
 
-    function retryHttpRequest(config, deferred) {
+    function retryHttpRequest(config) {
+      $q = $q || $injector.get('$q');
       function successCallback(response) {
-        deferred.resolve(response);
+        $q.resolve(response);
       }
       function errorCallback(response) {
-        deferred.reject(response);
+        $q.reject(response);
       }
       $http = $http || $injector.get('$http');
       $http(config).then(successCallback, errorCallback);
@@ -96,35 +101,26 @@
        * Appends HTTP request configuration object with deferred response attached to buffer.
        * @return {Number} The new length of the buffer.
        */
-      append: function(config, deferred) {
-        return buffer.push({
-          config: config,
-          deferred: deferred
-        });
+      append: function(config) {
+        return $localStorage.buffer.push(config);
       },
 
       /**
        * Abandon or reject (if reason provided) all the buffered requests.
        */
-      rejectAll: function(reason) {
-        if (reason) {
-          for (var i = 0; i < buffer.length; ++i) {
-            buffer[i].deferred.reject(reason);
-          }
-        }
-        buffer = [];
+      rejectAll: function() {
+        $localStorage.buffer = [];
       },
 
       /**
        * Retries all the buffered requests clears the buffer.
        */
-      retryAll: function(updater) {
-        for (var i = 0; i < buffer.length; ++i) {
-          var _cfg = updater(buffer[i].config);
-          if (_cfg !== false)
-            retryHttpRequest(_cfg, buffer[i].deferred);
+      retryAll: function() {
+        for (var i = 0; i < $localStorage.buffer.length; ++i) {
+          if ($localStorage.buffer[i])
+            retryHttpRequest($localStorage.buffer[i]);
         }
-        buffer = [];
+        $localStorage.buffer = [];
       }
     };
   }]);
